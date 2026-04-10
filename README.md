@@ -28,7 +28,7 @@ The project has five main phases:
 
 Three orthogonal contrasts separate AI-induced measurement shift from confounders:
 
-1. **Platform (substitute vs. placebo AI):** ChatGPT, Claude, Perplexity, etc. route queries *away* from Google, Gemini routes queries *through* Google. The general logic is that if substitute AI erodes GTrends but placebo does not, the effect is specific to measurement disruption, not general changes in economic behavior.
+1. **Platform (substitute vs. placebo AI):** ChatGPT, Claude, Perplexity, etc. route queries away from Google, Gemini (post-Feb 2024) routes queries through Google. (We may be able to extend the placebo time series to incorporate earlier Bard data; though data quality is likely to make this difficult.) The general logic is that if substitute AI erodes GTrends but placebo does not, the effect is specific to measurement disruption, not general changes in economic behavior.
 
 2. **Content (GDP-relevant vs. non-relevant):** Some categories carry strong GDP signal (bankruptcy, unemployment). Others have high AI substitutability but low GDP relevance (roleplaying, creative writing, cooking recipes). I.e., if only GDP-relevant categories erode, the tracker is specifically threatened.
 
@@ -36,11 +36,12 @@ Three orthogonal contrasts separate AI-induced measurement shift from confounder
 
 ## Key data sources
 
-- **GTrends:** ~215 economic categories, MSA-level (US) and country-level, monthly and weekly, 2020–2026
+- **GTrends:** approximately 215 economic categories, MSA-level (US) and country-level, monthly and weekly, 2020 to 2026
 - **OECD Quarterly National Accounts:** Real GDP growth (y-o-y) for 38 OECD members
 - **BLS LAUS:** Monthly state-level unemployment
 - **Census ACS:** MSA-level demographics (median age, education)
 - **EF English Proficiency Index:** Cross-country moderator. AI tools work better in English, so higher proficiency leads to stronger substitution effects.
+- **Shapley values:** Category-level importance scores from OECD Weekly Tracker repo (`weekly_shap.pkl`) used to prioritize the top-12 economic categories and compute vulnerability scores.
 
 
 ## Expected outputs
@@ -49,13 +50,16 @@ Three orthogonal contrasts separate AI-induced measurement shift from confounder
 2. Time series figures showing structural breaks in economic GTrends series
 3. Main result: negative effect of substitute AI on economic GTrends, with placebo near zero
 4. Category-level vulnerability scores (β coefficient × Shapley importance)
-5. Rolling-origin nowcasting evaluation: RMSE comparison pre-AI (2019–2022) vs. post-AI (2023–2026)
+5. Rolling-origin nowcasting evaluation: RMSE comparison pre-AI (2019 to 2022) versus post-AI (2023 to 2026)
 6. Potential policy recommendation could be a reweighted tracker that down-weights vulnerable categories
+7. 2×2 diagnostic table (economic vs. non-economic categories × substitute vs. placebo AI)
+8. Pre-trend figure and parallel trends test before November 2022
+9. Collinearity diagnostic (partial correlation between substitute and placebo AI series)
 
 ## Technical stack
 
-- **Data:** `pytrends`, OECD SDMX API, BLS LAUS, Census ACS
-- **Analysis:** `linearmodels` (panel regression with two-way clustered SEs), `statsmodels` (HAC SEs, mixed effects), `lightgbm` (gradient boosting for nowcasting), `strucchange` (structural break detection)
+- **Data:** `pytrends`, `pickle`, OECD SDMX API, BLS LAUS, Census ACS
+- **Analysis:** `linearmodels` (panel regression with two-way clustered SEs), `statsmodels` (HAC SEs, mixed effects), `pygam` (nonlinearity diagnostics), `lightgbm` (gradient boosting for nowcasting), `strucchange` (structural break detection)
 - **Visualization:** matplotlib, seaborn
 
 ## Why this matters beyond the OECD tracker
