@@ -34,22 +34,25 @@ def build_pytrends() -> TrendReq:
 
 
 def pull_monthly_msa(
-    kw_list: list[str], geo_codes: list[str], timeframe: str = "2020-01-01 2026-03-31"
+    kw_list: list[str],
+    geo_codes: list[str],
+    timeframe: str = "2020-01-01 2026-03-31",
+    cat: int = 0,
 ) -> pd.DataFrame:
     pts = build_pytrends()
     rows = []
     for geo in geo_codes:
         for i in range(0, len(kw_list), 5):
             batch = kw_list[i : i + 5]
-            logger.info(f"MSA {geo}: {batch}")
+            logger.info(f"MSA {geo} cat={cat}: {batch}")
             try:
-                pts.build_payload(batch, geo=geo, timeframe=timeframe)
+                pts.build_payload(batch, geo=geo, timeframe=timeframe, cat=cat)
                 df = pytrends_request(pts.interest_over_time)
             except Exception as e:
-                logger.warning(f"Failed MSA {geo} batch {batch}: {e}")
+                logger.warning(f"Failed MSA {geo} cat={cat} batch {batch}: {e}")
                 continue
             if df is None or df.empty:
-                logger.warning(f"Empty response MSA {geo} batch {batch}")
+                logger.warning(f"Empty response MSA {geo} cat={cat} batch {batch}")
                 continue
             if "isPartial" in df.columns:
                 df = df.drop(columns=["isPartial"])
@@ -65,22 +68,27 @@ def pull_monthly_msa(
 
 
 def pull_monthly_country(
-    kw_list: list[str], countries: list[str], timeframe: str = "2020-01-01 2026-03-31"
+    kw_list: list[str],
+    countries: list[str],
+    timeframe: str = "2020-01-01 2026-03-31",
+    cat: int = 0,
 ) -> pd.DataFrame:
     pts = build_pytrends()
     rows = []
     for country in countries:
         for i in range(0, len(kw_list), 5):
             batch = kw_list[i : i + 5]
-            logger.info(f"Country {country}: {batch}")
+            logger.info(f"Country {country} cat={cat}: {batch}")
             try:
-                pts.build_payload(batch, geo=country, timeframe=timeframe)
+                pts.build_payload(batch, geo=country, timeframe=timeframe, cat=cat)
                 df = pytrends_request(pts.interest_over_time)
             except Exception as e:
-                logger.warning(f"Failed country {country} batch {batch}: {e}")
+                logger.warning(f"Failed country {country} cat={cat} batch {batch}: {e}")
                 continue
             if df is None or df.empty:
-                logger.warning(f"Empty response country {country} batch {batch}")
+                logger.warning(
+                    f"Empty response country {country} cat={cat} batch {batch}"
+                )
                 continue
             if "isPartial" in df.columns:
                 df = df.drop(columns=["isPartial"])
@@ -100,6 +108,7 @@ def pull_weekly_country(
     countries: list[str],
     start_year: int = 2018,
     end_year: int = 2026,
+    cat: int = 0,
 ) -> pd.DataFrame:
     pts = build_pytrends()
     rows = []
@@ -109,12 +118,14 @@ def pull_weekly_country(
             tf = f"{window_start}-01-01 {window_end}-12-31"
             for i in range(0, len(kw_list), 5):
                 batch = kw_list[i : i + 5]
-                logger.info(f"Country {country} weekly {tf}: {batch}")
+                logger.info(f"Country {country} weekly {tf} cat={cat}: {batch}")
                 try:
-                    pts.build_payload(batch, geo=country, timeframe=tf)
+                    pts.build_payload(batch, geo=country, timeframe=tf, cat=cat)
                     df = pytrends_request(pts.interest_over_time)
                 except Exception as e:
-                    logger.warning(f"Failed {country} weekly {tf} batch {batch}: {e}")
+                    logger.warning(
+                        f"Failed {country} weekly {tf} cat={cat} batch {batch}: {e}"
+                    )
                     continue
                 if df is None or df.empty:
                     continue
