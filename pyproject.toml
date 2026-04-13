@@ -21,6 +21,7 @@ dependencies = [
     "ruptures",
     "python-dotenv",
     "pyarrow",
+    "urllib3<2",
 ]
 
 [project.optional-dependencies]
