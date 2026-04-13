@@ -371,6 +371,132 @@ FIPS_TO_STATE = {
 }
 
 
+PILOT_MSA_GEOS = [
+    "US-NY-New York-Newark-Jersey City",
+    "US-CA-Los Angeles-Long Beach-Anaheim",
+    "US-IL-Chicago-Naperville-Elgin",
+    "US-TX-Dallas-Fort Worth-Arlington",
+    "US-PA-Philadelphia-Camden-Wilmington",
+    "US-DC-Washington-Arlington-Alexandria",
+    "US-FL-Miami-Fort Lauderdale-West Palm Beach",
+    "US-GA-Atlanta-Sandy Springs-Roswell",
+    "US-MA-Boston-Cambridge-Nashua",
+    "US-WA-Seattle-Tacoma-Bellevue",
+]
+
+CENSUS_NAME_TO_PYTRENDS = {
+    msa_name: code
+    for msa_name, code in [
+        ("New York-Newark-Jersey City, NY-NJ-PA", "US-NY-New York-Newark-Jersey City"),
+        ("Los Angeles-Long Beach-Anaheim, CA", "US-CA-Los Angeles-Long Beach-Anaheim"),
+        ("Chicago-Naperville-Elgin, IL-IN-WI", "US-IL-Chicago-Naperville-Elgin"),
+        ("Dallas-Fort Worth-Arlington, TX", "US-TX-Dallas-Fort Worth-Arlington"),
+        (
+            "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD",
+            "US-PA-Philadelphia-Camden-Wilmington",
+        ),
+        (
+            "Washington-Arlington-Alexandria, DC-VA-MD-WV",
+            "US-DC-Washington-Arlington-Alexandria",
+        ),
+        (
+            "Miami-Fort Lauderdale-West Palm Beach, FL",
+            "US-FL-Miami-Fort Lauderdale-West Palm Beach",
+        ),
+        ("Atlanta-Sandy Springs-Roswell, GA", "US-GA-Atlanta-Sandy Springs-Roswell"),
+        ("Boston-Cambridge-Nashua, MA-NH", "US-MA-Boston-Cambridge-Nashua"),
+        ("Seattle-Tacoma-Bellevue, WA", "US-WA-Seattle-Tacoma-Bellevue"),
+        (
+            "Houston-The Woodlands-Sugar Land, TX",
+            "US-TX-Houston-The Woodlands-Sugar Land",
+        ),
+        ("Phoenix-Mesa-Chandler, AZ", "US-AZ-Phoenix-Mesa-Chandler"),
+        ("San Francisco-Oakland-Berkeley, CA", "US-CA-San Francisco-Oakland-Berkeley"),
+        (
+            "Riverside-San Bernardino-Ontario, CA",
+            "US-CA-Riverside-San Bernardino-Ontario",
+        ),
+        (
+            "Minneapolis-St. Paul-Bloomington, MN-WI",
+            "US-MN-Minneapolis-St. Paul-Bloomington",
+        ),
+        ("San Diego-Chula Vista-Carlsbad, CA", "US-CA-San Diego-Chula Vista-Carlsbad"),
+        (
+            "Tampa-St. Petersburg-Clearwater, FL",
+            "US-FL-Tampa-St. Petersburg-Clearwater",
+        ),
+        ("Denver-Aurora-Lakewood, CO", "US-CO-Denver-Aurora-Lakewood"),
+        ("Baltimore-Columbia-Towson, MD", "US-MD-Baltimore-Columbia-Towson"),
+        ("St. Louis, MO-IL", "US-MO-St. Louis"),
+        ("Orlando-Kissimmee-Sanford, FL", "US-FL-Orlando-Kissimmee-Sanford"),
+        ("San Antonio-New Braunfels, TX", "US-TX-San Antonio-New Braunfels"),
+        ("Portland-Vancouver-Hillsboro, OR-WA", "US-OR-Portland-Vancouver-Hillsboro"),
+        ("Pittsburgh, PA", "US-PA-Pittsburgh"),
+        ("Sacramento-Roseville-Folsom, CA", "US-CA-Sacramento-Roseville-Folsom"),
+        ("Las Vegas-Henderson-Paradise, NV", "US-NV-Las Vegas-Henderson-Paradise"),
+        (
+            "Nashville-Davidson-Murfreesboro-Franklin, TN",
+            "US-TN-Nashville-Davidson-Murfreesboro-Franklin",
+        ),
+        ("Austin-Round Rock-Georgetown, TX", "US-TX-Austin-Round Rock-Georgetown"),
+        ("Cleveland-Elyria, OH", "US-OH-Cleveland-Elyria"),
+        ("Kansas City, MO-KS", "US-MO-Kansas City"),
+        ("Columbus, OH", "US-OH-Columbus"),
+        ("Indianapolis-Carmel-Anderson, IN", "US-IN-Indianapolis-Carmel-Anderson"),
+        ("Charlotte-Concord-Gastonia, NC-SC", "US-NC-Charlotte-Concord-Gastonia"),
+        ("Cincinnati, OH-KY-IN", "US-OH-Cincinnati"),
+        (
+            "Virginia Beach-Norfolk-Newport News, VA-NC",
+            "US-VA-Virginia Beach-Norfolk-Newport News",
+        ),
+        ("Detroit-Warren-Dearborn, MI", "US-MI-Detroit-Warren-Dearborn"),
+        ("San Jose-Sunnyvale-Santa Clara, CA", "US-CA-San Jose-Sunnyvale-Santa Clara"),
+        ("Jacksonville, FL", "US-FL-Jacksonville"),
+        (
+            "Nashville-Davidson-Murfreesboro-Franklin, TN",
+            "US-TN-Nashville-Davidson-Murfreesboro-Franklin",
+        ),
+        ("Milwaukee-Waukesha-West Allis, WI", "US-WI-Milwaukee-Waukesha-West Allis"),
+        ("Providence-Warwick, RI-MA", "US-RI-Providence-Warwick"),
+        ("Memphis, TN-MS-AR", "US-TN-Memphis"),
+        ("Louisville-Jefferson County, KY-IN", "US-KY-Louisville-Jefferson County"),
+        (
+            "Hartford-West Hartford-East Hartford, CT",
+            "US-CT-Hartford-West Hartford-East Hartford",
+        ),
+        ("Oklahoma City, OK", "US-OK-Oklahoma City"),
+        ("New Orleans-Metairie, LA", "US-LA-New Orleans-Metairie"),
+        ("Buffalo-Cheektowaga, NY", "US-NY-Buffalo-Cheektowaga"),
+        ("Raleigh, NC", "US-NC-Raleigh"),
+        ("Birmingham-Hoover, AL", "US-AL-Birmingham-Hoover"),
+        ("Salt Lake City, UT", "US-UT-Salt Lake City"),
+        ("Grand Rapids-Wyoming, MI", "US-MI-Grand Rapids-Wyoming"),
+    ]
+}
+
+
+def get_pytrends_msa_codes(census_names: list[str] | None = None) -> list[str]:
+    """Convert Census MSA names to pytrends geo codes.
+
+    Args:
+        census_names: List of Census-style MSA names. If None, returns all known codes.
+
+    Returns:
+        List of pytrends-format geo codes (e.g., 'US-NY-New York-Newark-Jersey City').
+    """
+    if census_names is None:
+        return list(CENSUS_NAME_TO_PYTRENDS.values())
+    codes = []
+    for name in census_names:
+        if name in CENSUS_NAME_TO_PYTRENDS:
+            codes.append(CENSUS_NAME_TO_PYTRENDS[name])
+        else:
+            state = MSA_TO_STATE.get(name, "??")
+            city_part = name.split(",")[0].split("-")[0].strip()
+            codes.append(f"US-{state}-{city_part}")
+    return codes
+
+
 def load_bls_state_unemployment() -> pd.DataFrame:
     data_path = RAW_DIR / "la.data.3.AllStatesS"
     series_path = RAW_DIR / "la.series"
