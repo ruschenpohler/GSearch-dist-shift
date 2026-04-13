@@ -24,6 +24,53 @@ MAJOR_COUNTRIES = ["US", "GB", "DE", "FR", "JP"]
 
 DELAY = 30
 
+PILOT_MSAS = [
+    "US-NY-New York-Newark-Jersey City",
+    "US-CA-Los Angeles-Long Beach-Anaheim",
+    "US-IL-Chicago-Naperville-Elgin",
+    "US-TX-Dallas-Fort Worth-Arlington",
+    "US-PA-Philadelphia-Camden-Wilmington",
+    "US-DC-Washington-Arlington-Alexandria",
+    "US-FL-Miami-Fort Lauderdale-West Palm Beach",
+    "US-GA-Atlanta-Sandy Springs-Roswell",
+    "US-MA-Boston-Cambridge-Nashua",
+    "US-WA-Seattle-Tacoma-Bellevue",
+]
+
+
+def pull_ai_msa_monthly_pilot():
+    logger.info("Pulling AI terms: MSA-level monthly (10 pilot MSAs, 4 terms)")
+    pts = TrendReq(hl="en-US", tz=360, retries=3, backoff_factor=60)
+    all_frames = []
+    for msa in PILOT_MSAS:
+        for i in range(0, len(AI_TERMS), 4):
+            batch = AI_TERMS[i : i + 4]
+            logger.info(f"  MSA {msa}: {batch}")
+            try:
+                pts.build_payload(batch, geo=msa, timeframe="2020-01-01 2026-03-31")
+                df = pts.interest_over_time()
+                if df is not None and not df.empty:
+                    if "isPartial" in df.columns:
+                        df = df.drop(columns=["isPartial"])
+                    df = df.reset_index()
+                    df["geo"] = msa
+                    all_frames.append(df)
+                    logger.info(f"    Got {len(df)} rows")
+                else:
+                    logger.warning(f"    Empty response for {msa}")
+            except Exception as e:
+                logger.warning(f"    Failed: {e}")
+            time.sleep(DELAY)
+    if not all_frames:
+        logger.error("No data pulled!")
+        return pd.DataFrame()
+    result = pd.concat(all_frames, ignore_index=True)
+    result = result.melt(id_vars=["date", "geo"], var_name="keyword", value_name="svi")
+    out_path = RAW_DIR / "gtrends_ai_msa_monthly_pilot.parquet"
+    result.to_parquet(out_path, index=False)
+    logger.info(f"Saved {len(result)} rows to {out_path}")
+    return result
+
 
 def pull_ai_country_monthly():
     logger.info("Pulling AI terms: country-level monthly (5 countries, 4 terms)")
