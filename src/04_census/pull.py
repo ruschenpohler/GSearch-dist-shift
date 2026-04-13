@@ -1,21 +1,17 @@
 import logging
 import os
+import time
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
+import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-
-CENSUS_API_KEY = os.getenv("CENSUS_API_KEY")
-
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 
 ACS5_BASE_URL = "https://api.census.gov/data/{year}/acs/acs5/profile"
-
 MSA_GEOMETRY = "metropolitan statistical area/micropolitan statistical area"
 
 VARIABLES = {
@@ -25,23 +21,28 @@ VARIABLES = {
 
 
 def pull_acs_msa(year: int = 2023) -> pd.DataFrame:
-    if not CENSUS_API_KEY:
-        raise ValueError("CENSUS_API_KEY not found. Set it in .env file.")
-
     import requests
 
     var_list = ",".join(VARIABLES.keys())
     url = ACS5_BASE_URL.format(year=year)
+
+    logger.info(f"Pulling ACS {year} MSA-level demographics")
+
     params = {
         "get": f"NAME,{var_list}",
         "for": MSA_GEOMETRY,
-        "key": CENSUS_API_KEY,
     }
 
-    logger.info(f"Pulling ACS {year} MSA-level demographics")
-    resp = requests.get(url, params=params, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
+    try:
+        resp = requests.get(url, params=params, timeout=120)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        logger.error(f"Failed ACS {year}: {e}")
+        raise
+
+    if len(data) <= 1:
+        raise ValueError(f"No data returned for ACS {year}")
 
     headers = data[0]
     rows = data[1:]
@@ -53,8 +54,7 @@ def pull_acs_msa(year: int = 2023) -> pd.DataFrame:
     df = df.rename(columns={"NAME": "msa_name"})
     df["year"] = year
     df = df.dropna(subset=["pct_bachelors_or_higher", "median_age"])
-
-    logger.info(f"Pulled {len(df)} MSAs for ACS {year}")
+    logger.info(f"ACS {year}: {len(df)} MSAs with valid data")
     return df
 
 
@@ -65,7 +65,8 @@ def pull_acs_multiyear(years: list[int] | None = None) -> pd.DataFrame:
     for year in years:
         try:
             df = pull_acs_msa(year)
-            frames.append(df)
+            if not df.empty:
+                frames.append(df)
         except Exception as e:
             logger.warning(f"Failed to pull ACS {year}: {e}")
     if not frames:

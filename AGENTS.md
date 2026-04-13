@@ -62,19 +62,40 @@ A complementary within-Google test exploits AI Overviews rollout: the initial us
 
 Use ChatGPT alone as the primary substitute specification. Add Perplexity, Claude, and Gemini as sensitivity checks. Pull all four AI search terms at both MSA and country level. Aggregate substitute terms via PCA (if 1st component explains greater than 60 percent variance) or normalized average; retain individual series for sensitivity. The Bard series is too noisy from the rebranding transition to stitch reliably.
 
-**Economic categories** (top-12 by Shapley importance from tracker repo; see Section 3.7): drawn from Woloszko (2020) Annex B sector groupings. Use the Annex B search term strings directly in pytrends rather than reverse-engineering category IDs. Representative terms by sector:
+**Economic categories** (top-12 by Shapley importance from tracker repo; see Section 3.7): The Shapley column names (e.g., "Maritime Transport", "Distributed & Parallel Computing") are GTrends *category names*, not free-text search terms. Most have near-zero search volume as search strings. The pull therefore uses a hybrid approach: for Shapley categories that map to GTrends category IDs, queries use `cat=<ID>` with a broad search term (e.g., `cat=665` for Maritime Transport with query `"shipping"`); for categories that are themselves high-volume search terms (e.g., "Unemployment benefits", "Loan", "Jobs"), queries use free-text search directly. The mapping is in `src/utils/category_mapping.py`.
+
+Top-12 Shapley categories and their GTrends query strategy:
+
+| Shapley Category | Query Type | GTrends Detail |
+|------------------|-----------|----------------|
+| Fitness | category | cat=94, query "fitness" |
+| Food & Drink | category | cat=71, query "food" |
+| Unemployment benefits | search term | "Unemployment benefits" |
+| House price index | search term | "Housing prices" (topic name has zero volume) |
+| Medical Facilities & Services | category | cat=256, query "hospital" |
+| Distributed & Parallel Computing | category | cat=1298, query "computing" |
+| Jobs topic | search term | "Jobs" |
+| Financial Markets | category | cat=1163, query "market" |
+| Rail Transport | category | cat=666, query "train" |
+| Maritime Transport | category | cat=665, query "shipping" |
+| Loan | search term | "Loan" |
+| Food Service | category | cat=957, query "restaurant" |
+
+Implication: cross-category SVI comparisons require care because category-filtered queries and free-text queries have different normalization bases. Within-category variation over time (which is what the panel regressions exploit) is unaffected; only cross-sectional level comparisons across query types are problematic.
+
+For sensitivity and deeper analysis, Annex B groupings provide additional search terms per sector (see `category_mapping.py`). Representative terms by sector:
 
 | Sector | Example search terms |
 |--------|----------------------|
-| Labor markets | "unemployment benefits", "jobs", "job listings", "recruitment" |
-| Housing | "real estate agency", "mortgage", "home insurance" |
-| Business services | "venture capital", "bankruptcy", "credit and lending" |
-| Consumption | "restaurants", "travel", "vehicle brands" |
-| Industrial | "maritime transport", "agricultural equipment", "freight" |
-| Uncertainty | "economic crisis", "recession" |
-| Poverty | "food bank" |
+| Labor markets | "Unemployment", "Unemployment benefits", "Jobs", "Job Listings", "Recruitment" |
+| Housing | "Affordable housing", "Housing prices", "Mortgage", "Home Insurance", "Apartments & Residential Rentals" |
+| Business services | "Accounting & Auditing", "Bankruptcy", "Credit and Lending", "Consulting" |
+| Consumption | "Food & Drink" (cat), "Travel" (cat), "Fitness" (cat) |
+| Industrial | "Maritime Transport" (cat), "Rail Transport" (cat), "Freight & Trucking" |
+| Uncertainty | "Economic crisis", "Recession", "Financial crisis", "Krach" |
+| Poverty | "Food bank" (search term) |
 
-Note: "travel" and "food and drink" appear in both the consumption sector and the non-economic diagnostic set. Assign each term to exactly one group before analysis; do not let overlap contaminate the Phase 3b comparison.
+Note: "Food & Drink" appears in both the consumption sector and will overlap with the non-economic diagnostic "Cooking recipes" (cat=122). Assign each term to exactly one group before analysis; do not let overlap contaminate the Phase 3b comparison.
 
 **Non-economic diagnostic categories** (high AI substitutability, low GDP relevance): roleplaying, creative writing, cooking recipes. These three are well-documented AI substitution targets. Per OpenRouter's State of AI report, roleplaying and creative writing are among the top use cases by volume; cooking recipes similarly displaces food blogs. They carry little GDP signal. If AI erodes these but not economic categories, the tracker is safe. If both erode, the problem is general. If only economic categories erode, the mechanism is something specific about economic information-seeking.
 
@@ -317,7 +338,7 @@ google-trends-ai-shift/
 │   ├── 20_diurnal/run.py
 │   ├── 21_outages/run.py
 │   ├── 22_italy/run.py
-│   ├── utils/ (gtrends.py, sdmx.py, crosswalks.py)
+│   ├── utils/ (gtrends.py, sdmx.py, crosswalks.py, category_mapping.py)
 │   └── figures/
 ├── data/ (gitignored: raw/, interim/, processed/)
 ├── output/ (gitignored)
@@ -332,7 +353,7 @@ google-trends-ai-shift/
 - [x] QNA SDMX dataflow ID: confirmed under `OECD.SDD.NAD` (verify exact ID via API)
 - [x] 215 categories confirmed from paper (paragraph 16), selected from 1,200 available
 - [x] 33 topics confirmed (paragraph 16)
-- [x] Shapley pickle files loaded; top-12 to extract by mean importance
+- [x] Shapley pickle files loaded; top-12 extracted: Fitness, Food & Drink, Unemployment benefits, House price index, Medical Facilities & Services, Distributed & Parallel Computing, Jobs topic, Financial Markets, Rail Transport, Maritime Transport, Loan, Food Service
 - [x] Gemini routing: resolved — not a valid placebo; see Section 4.X
 - [ ] `pytrends` MSA-level suppression rates (pilot: 3 categories × 50 MSAs)
 - [x] BLS LAUS: flat files downloaded to `data/raw/`
