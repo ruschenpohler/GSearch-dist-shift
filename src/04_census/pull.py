@@ -16,7 +16,7 @@ MSA_GEOMETRY = "metropolitan statistical area/micropolitan statistical area"
 
 VARIABLES = {
     "DP02_0068PE": "pct_bachelors_or_higher",
-    "DP05_0017E": "median_age",
+    "DP05_0018E": "median_age",
 }
 
 
