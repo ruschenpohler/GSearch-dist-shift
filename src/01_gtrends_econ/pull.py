@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-import pickle
 
 from src.utils.gtrends import (
     RAW_DIR,
@@ -12,24 +11,12 @@ from src.utils.gtrends import (
     stitch_weekly,
 )
 from src.utils.category_mapping import SHAPLEY_QUERIES, NON_ECONOMIC_DIAGNOSTICS
+from src.utils.crosswalks import PILOT_MSA_GEOS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 MAJOR_COUNTRIES = ["US", "GB", "DE", "FR", "JP"]
-
-PILOT_MSAS = [
-    "US-NY-New York-Newark-Jersey City",
-    "US-CA-Los Angeles-Long Beach-Anaheim",
-    "US-IL-Chicago-Naperville-Elgin",
-    "US-TX-Dallas-Fort Worth-Arlington",
-    "US-PA-Philadelphia-Camden-Wilmington",
-    "US-DC-Washington-Arlington-Alexandria",
-    "US-FL-Miami-Fort Lauderdale-West Palm Beach",
-    "US-GA-Atlanta-Sandy Springs-Roswell",
-    "US-MA-Boston-Cambridge-Nashua",
-    "US-WA-Seattle-Tacoma-Bellevue",
-]
 
 
 def pull_econ_pilot_country_monthly():
@@ -104,16 +91,16 @@ def pull_econ_pilot_msa_monthly():
     for cat_name, query_type, cat_id, search_term in SHAPLEY_QUERIES:
         if query_type == "category":
             kw = [search_term]
-            df = pull_monthly_msa(kw, PILOT_MSAS, cat=cat_id)
+            df = pull_monthly_msa(kw, PILOT_MSA_GEOS, cat=cat_id)
         else:
             kw = [search_term]
-            df = pull_monthly_msa(kw, PILOT_MSAS)
+            df = pull_monthly_msa(kw, PILOT_MSA_GEOS)
         if not df.empty:
             df["category"] = cat_name
             all_frames.append(df)
             logger.info(f"  {cat_name}: {len(df)} rows")
     for diag_name, search_term in NON_ECONOMIC_DIAGNOSTICS:
-        df = pull_monthly_msa([search_term], PILOT_MSAS)
+        df = pull_monthly_msa([search_term], PILOT_MSA_GEOS)
         if not df.empty:
             df["category"] = diag_name
             all_frames.append(df)
